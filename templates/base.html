@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Chess ELO{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <nav>
+    <a class="brand" href="{{ url_for('leaderboard') }}">
+      <img src="{{ url_for('static', filename='images/logo.png') }}"
+           alt="logo" class="nav-logo"
+           onerror="this.style.display='none';this.nextSibling.style.display='inline'">
+      <span style="display:none">♟</span> Chess ELO
+    </a>
+    <a href="{{ url_for('leaderboard') }}" {% if request.endpoint == 'leaderboard' %}class="active"{% endif %}>Leaderboard</a>
+    <a href="{{ url_for('players') }}" {% if request.endpoint in ('players','player_stats') %}class="active"{% endif %}>Players</a>
+    <a href="{{ url_for('matches') }}" {% if request.endpoint == 'matches' %}class="active"{% endif %}>Matches</a>
+  </nav>
+  <main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="flashes">
+          {% for cat, msg in messages %}<li class="{{ cat }}">{{ msg }}</li>{% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

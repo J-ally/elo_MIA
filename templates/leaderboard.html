@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard — Chess ELO{% endblock %}
+{% block content %}
+<h1>Leaderboard</h1>
+<div class="card">
+  {% if players %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Player</th>
+        <th>ELO</th>
+        <th>Games</th>
+        <th>W</th>
+        <th>D</th>
+        <th>L</th>
+        <th>Win%</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in players %}
+      <tr>
+        <td class="rank">{{ loop.index }}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:.6rem;">
+            {% if p['avatar'] %}
+              <img src="{{ url_for('static', filename='images/avatars/' + p['avatar']) }}" class="avatar-sm" alt="">
+            {% else %}
+              <div class="avatar-sm avatar-placeholder" style="font-size:.7rem;">{{ p['name'][0].upper() }}</div>
+            {% endif %}
+            <a href="{{ url_for('player_stats', player_id=p['id']) }}">{{ p['name'] }}</a>
+          </div>
+        </td>
+        <td class="elo">{{ p['elo'] }}</td>
+        <td>{{ p['games'] }}</td>
+        <td>{{ p['wins'] }}</td>
+        <td>{{ p['draws'] }}</td>
+        <td>{{ p['losses'] }}</td>
+        <td>{{ "%.0f%%"|format(p['wins'] / p['games'] * 100) if p['games'] else "—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No players yet. <a href="{{ url_for('players') }}">Add one.</a></p>
+  {% endif %}
+</div>
+{% endblock %}

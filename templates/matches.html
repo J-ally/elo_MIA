@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Matches — Chess ELO{% endblock %}
+{% block content %}
+<h1>Matches</h1>
+
+<div class="card">
+  <h2>Register Match</h2>
+  <form method="post" class="inline">
+    <div class="field">
+      <label>White</label>
+      <select name="white_id" required>
+        <option value="" disabled selected>select</option>
+        {% for p in players %}
+        <option value="{{ p['id'] }}">{{ p['name'] }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label>Black</label>
+      <select name="black_id" required>
+        <option value="" disabled selected>select</option>
+        {% for p in players %}
+        <option value="{{ p['id'] }}">{{ p['name'] }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label>Date &amp; Time</label>
+      <input type="datetime-local" name="played_at" required value="{{ now }}">
+    </div>
+    <div class="field">
+      <label>Winner</label>
+      <select name="winner" required>
+        <option value="" disabled selected>select</option>
+        <option value="white">White</option>
+        <option value="black">Black</option>
+        <option value="draw">Draw</option>
+      </select>
+    </div>
+    <button type="submit">Register</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Recent Matches</h2>
+  {% if matches %}
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>White</th>
+        <th>Black</th>
+        <th>Result</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in matches %}
+      <tr>
+        <td class="muted">{{ m['played_at'] }}</td>
+        <td><a href="{{ url_for('player_stats', player_id=m['white_id']) }}">{{ m['white'] }}</a></td>
+        <td><a href="{{ url_for('player_stats', player_id=m['black_id']) }}">{{ m['black'] }}</a></td>
+        <td>
+          <span class="winner-badge {{ m['winner'] }}">
+            {% if m['winner'] == 'draw' %}Draw{% else %}{{ m['winner']|capitalize }} wins{% endif %}
+          </span>
+        </td>
+        <td>
+          <button type="button" class="btn-danger"
+                  onclick="openDeleteModal({{ m['id'] }}, '{{ m['white'] }} vs {{ m['black'] }}')">
+            Delete
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No matches registered yet.</p>
+  {% endif %}
+</div>
+
+<!-- Admin key modal -->
+<div id="delete-modal" class="modal-backdrop" style="display:none">
+  <div class="modal">
+    <p class="modal-title">Delete match</p>
+    <p id="modal-match-label" class="muted" style="margin-bottom:.8rem;font-size:.88rem;"></p>
+    <form id="delete-form" method="post">
+      <div class="field" style="margin-bottom:.8rem;">
+        <label>Admin key</label>
+        <input type="password" name="admin_key" id="modal-key-input"
+               placeholder="Enter admin key" autocomplete="off" required>
+      </div>
+      <div style="display:flex;gap:.6rem;justify-content:flex-end;">
+        <button type="button" class="btn-ghost" onclick="closeDeleteModal()">Cancel</button>
+        <button type="submit" class="btn-danger" style="border-radius:5px;padding:.45rem 1rem;">Confirm delete</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openDeleteModal(id, label) {
+  document.getElementById('delete-form').action = '/matches/' + id + '/delete';
+  document.getElementById('modal-match-label').textContent = label;
+  document.getElementById('modal-key-input').value = '';
+  document.getElementById('delete-modal').style.display = 'flex';
+  document.getElementById('modal-key-input').focus();
+}
+function closeDeleteModal() {
+  document.getElementById('delete-modal').style.display = 'none';
+}
+document.getElementById('delete-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeDeleteModal();
+});
+</script>
+{% endblock %}

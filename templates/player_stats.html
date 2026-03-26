@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{{ player['name'] }} — Chess ELO{% endblock %}
+{% block content %}
+<a class="btn btn-ghost" href="{{ url_for('players') }}" style="font-size:.85rem;padding:.3rem .7rem;">← Players</a>
+
+<div style="display:flex;align-items:center;gap:1.2rem;margin-top:1rem;margin-bottom:1.2rem;">
+  <div class="avatar-wrap">
+    {% if player['avatar'] %}
+      <img src="{{ url_for('static', filename='images/avatars/' + player['avatar']) }}"
+           class="avatar-lg" alt="{{ player['name'] }}">
+    {% else %}
+      <div class="avatar-lg avatar-placeholder">{{ player['name'][0].upper() }}</div>
+    {% endif %}
+    <form method="post" action="{{ url_for('upload_avatar', player_id=player['id']) }}"
+          enctype="multipart/form-data" class="avatar-upload-form">
+      <label class="avatar-upload-btn" title="Change photo">
+        ✏
+        <input type="file" name="avatar" accept="image/*" onchange="this.form.submit()" style="display:none">
+      </label>
+    </form>
+  </div>
+  <h1>{{ player['name'] }}</h1>
+</div>
+
+<div class="stats-row">
+  <div class="stat-box">
+    <div class="value">{{ player['elo'] }}</div>
+    <div class="label">ELO</div>
+  </div>
+  <div class="stat-box">
+    <div class="value">{{ player['games'] }}</div>
+    <div class="label">Games</div>
+  </div>
+  <div class="stat-box">
+    <div class="value">{{ player['wins'] }}</div>
+    <div class="label">Wins</div>
+  </div>
+  <div class="stat-box">
+    <div class="value">{{ player['draws'] }}</div>
+    <div class="label">Draws</div>
+  </div>
+  <div class="stat-box">
+    <div class="value">{{ player['losses'] }}</div>
+    <div class="label">Losses</div>
+  </div>
+  {% if player['games'] %}
+  <div class="stat-box">
+    <div class="value">{{ "%.0f%%"|format(player['wins'] / player['games'] * 100) }}</div>
+    <div class="label">Win%</div>
+  </div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>Match History</h2>
+  {% if history %}
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>White</th>
+        <th>Black</th>
+        <th>Result</th>
+        <th>Outcome</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in history %}
+      {% set won = (m['side'] == m['winner']) %}
+      {% set drew = (m['winner'] == 'draw') %}
+      <tr>
+        <td class="muted">{{ m['played_at'] }}</td>
+        <td>{{ m['white'] }}</td>
+        <td>{{ m['black'] }}</td>
+        <td>
+          <span class="winner-badge {{ m['winner'] }}">
+            {% if m['winner'] == 'draw' %}Draw{% else %}{{ m['winner']|capitalize }} wins{% endif %}
+          </span>
+        </td>
+        <td>
+          {% if drew %}
+            <span style="color:#888">Draw</span>
+          {% elif won %}
+            <span style="color:#6dbf67;font-weight:600">Win</span>
+          {% else %}
+            <span style="color:#e06060">Loss</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No matches played yet.</p>
+  {% endif %}
+</div>
+{% endblock %}
