@@ -1,8 +1,7 @@
 import os
 from datetime import datetime
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, redirect, url_for, flash
-from werkzeug.utils import secure_filename
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from models import (
     init_db, create_player, delete_player, get_players, get_leaderboard,
     get_matches, register_match, get_player, set_avatar, delete_match
@@ -14,13 +13,45 @@ AVATAR_DIR = os.path.join("static", "images", "avatars")
 ALLOWED = {"png", "jpg", "jpeg", "gif", "webp"}
 
 app = Flask(__name__)
-app.secret_key = "elo-chess-secret"
+app.secret_key = os.environ.get("SECRET_KEY", "elo-chess-dev-secret")
+
+
+def is_admin():
+    return session.get("admin") is True
+
+
+@app.context_processor
+def inject_admin():
+    return {"is_admin": is_admin()}
 
 
 @app.before_request
 def setup():
     init_db()
 
+
+# --- Auth ---
+
+@app.route("/admin/unlock", methods=["POST"])
+def admin_unlock():
+    key = request.form.get("admin_key", "").strip()
+    next_url = request.form.get("next") or url_for("leaderboard")
+    if key == os.environ.get("ADMIN_KEY", ""):
+        session["admin"] = True
+        flash("Admin mode enabled.", "success")
+    else:
+        flash("Invalid admin key.", "error")
+    return redirect(next_url)
+
+
+@app.route("/admin/lock", methods=["POST"])
+def admin_lock():
+    session.pop("admin", None)
+    flash("Admin mode disabled.", "success")
+    return redirect(request.referrer or url_for("leaderboard"))
+
+
+# --- Views ---
 
 @app.route("/")
 def leaderboard():
@@ -30,6 +61,9 @@ def leaderboard():
 @app.route("/players", methods=["GET", "POST"])
 def players():
     if request.method == "POST":
+        if not is_admin():
+            flash("Admin access required.", "error")
+            return redirect(url_for("players"))
         name = request.form["name"].strip()
         if name:
             try:
@@ -43,9 +77,8 @@ def players():
 
 @app.route("/players/<int:player_id>/delete", methods=["POST"])
 def delete_player_route(player_id):
-    key = request.form.get("admin_key", "").strip()
-    if key != os.environ.get("ADMIN_KEY", ""):
-        flash("Invalid admin key.", "error")
+    if not is_admin():
+        flash("Admin access required.", "error")
         return redirect(url_for("players"))
     try:
         delete_player(player_id)
@@ -66,6 +99,9 @@ def player_stats(player_id):
 
 @app.route("/players/<int:player_id>/avatar", methods=["POST"])
 def upload_avatar(player_id):
+    if not is_admin():
+        flash("Admin access required.", "error")
+        return redirect(url_for("player_stats", player_id=player_id))
     file = request.files.get("avatar")
     if not file or not file.filename:
         flash("No file selected.", "error")
@@ -75,7 +111,6 @@ def upload_avatar(player_id):
         flash("Invalid file type.", "error")
         return redirect(url_for("player_stats", player_id=player_id))
     filename = f"{player_id}.{ext}"
-    # remove old avatar files for this player
     for f in os.listdir(AVATAR_DIR):
         if f.startswith(f"{player_id}."):
             os.remove(os.path.join(AVATAR_DIR, f))
@@ -90,6 +125,9 @@ def matches():
     players_list = get_players()
     now = datetime.now().strftime("%Y-%m-%dT%H:%M")
     if request.method == "POST":
+        if not is_admin():
+            flash("Admin access required.", "error")
+            return redirect(url_for("matches"))
         white_id = request.form["white_id"]
         black_id = request.form["black_id"]
         played_at = request.form["played_at"]
@@ -108,9 +146,8 @@ def matches():
 
 @app.route("/matches/<int:match_id>/delete", methods=["POST"])
 def delete_match_route(match_id):
-    key = request.form.get("admin_key", "").strip()
-    if key != os.environ.get("ADMIN_KEY", ""):
-        flash("Invalid admin key.", "error")
+    if not is_admin():
+        flash("Admin access required.", "error")
         return redirect(url_for("matches"))
     try:
         delete_match(match_id)

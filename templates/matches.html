@@ -3,6 +3,7 @@
 {% block content %}
 <h1>Matches</h1>
 
+{% if is_admin %}
 <div class="card">
   <h2>Register Match</h2>
   <form method="post" class="inline">
@@ -40,6 +41,7 @@
     <button type="submit">Register</button>
   </form>
 </div>
+{% endif %}
 
 <div class="card">
   <h2>Recent Matches</h2>
@@ -51,7 +53,7 @@
         <th>White</th>
         <th>Black</th>
         <th>Result</th>
-        <th></th>
+        {% if is_admin %}<th></th>{% endif %}
       </tr>
     </thead>
     <tbody>
@@ -65,12 +67,14 @@
             {% if m['winner'] == 'draw' %}Draw{% else %}{{ m['winner']|capitalize }} wins{% endif %}
           </span>
         </td>
+        {% if is_admin %}
         <td>
-          <button type="button" class="btn-danger"
-                  onclick="openDeleteModal({{ m['id'] }}, '{{ m['white'] }} vs {{ m['black'] }}')">
-            Delete
-          </button>
+          <form method="post" action="{{ url_for('delete_match_route', match_id=m['id']) }}"
+                onsubmit="return confirm('Delete this match? ELO will be reverted.')">
+            <button type="submit" class="btn-danger">Delete</button>
+          </form>
         </td>
+        {% endif %}
       </tr>
       {% endfor %}
     </tbody>
@@ -79,39 +83,4 @@
   <p class="muted">No matches registered yet.</p>
   {% endif %}
 </div>
-
-<!-- Admin key modal -->
-<div id="delete-modal" class="modal-backdrop" style="display:none">
-  <div class="modal">
-    <p class="modal-title">Delete match</p>
-    <p id="modal-match-label" class="muted" style="margin-bottom:.8rem;font-size:.88rem;"></p>
-    <form id="delete-form" method="post">
-      <div class="field" style="margin-bottom:.8rem;">
-        <label>Admin key</label>
-        <input type="password" name="admin_key" id="modal-key-input"
-               placeholder="Enter admin key" autocomplete="off" required>
-      </div>
-      <div style="display:flex;gap:.6rem;justify-content:flex-end;">
-        <button type="button" class="btn-ghost" onclick="closeDeleteModal()">Cancel</button>
-        <button type="submit" class="btn-danger" style="border-radius:5px;padding:.45rem 1rem;">Confirm delete</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<script>
-function openDeleteModal(id, label) {
-  document.getElementById('delete-form').action = '/matches/' + id + '/delete';
-  document.getElementById('modal-match-label').textContent = label;
-  document.getElementById('modal-key-input').value = '';
-  document.getElementById('delete-modal').style.display = 'flex';
-  document.getElementById('modal-key-input').focus();
-}
-function closeDeleteModal() {
-  document.getElementById('delete-modal').style.display = 'none';
-}
-document.getElementById('delete-modal').addEventListener('click', function(e) {
-  if (e.target === this) closeDeleteModal();
-});
-</script>
 {% endblock %}

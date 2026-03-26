@@ -11,6 +11,7 @@
     {% else %}
       <div class="avatar-lg avatar-placeholder">{{ player['name'][0].upper() }}</div>
     {% endif %}
+    {% if is_admin %}
     <form method="post" action="{{ url_for('upload_avatar', player_id=player['id']) }}"
           enctype="multipart/form-data" class="avatar-upload-form">
       <label class="avatar-upload-btn" title="Change photo">
@@ -18,6 +19,7 @@
         <input type="file" name="avatar" accept="image/*" onchange="this.form.submit()" style="display:none">
       </label>
     </form>
+    {% endif %}
   </div>
   <h1>{{ player['name'] }}</h1>
 </div>

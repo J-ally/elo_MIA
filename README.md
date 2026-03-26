@@ -19,10 +19,10 @@ Open `http://localhost:5000`.
 
 The SQLite database (`elo.db`) is created automatically on first run.
 
-## .env
+## create an .env
 
 ```
 ADMIN_KEY=change-me
 ```
 
-The admin key is required to delete players or matches.
+The admin key is required to delete or add players or matches.

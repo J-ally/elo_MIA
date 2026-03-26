@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Chess ELO{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -17,7 +18,19 @@
     <a href="{{ url_for('leaderboard') }}" {% if request.endpoint == 'leaderboard' %}class="active"{% endif %}>Leaderboard</a>
     <a href="{{ url_for('players') }}" {% if request.endpoint in ('players','player_stats') %}class="active"{% endif %}>Players</a>
     <a href="{{ url_for('matches') }}" {% if request.endpoint == 'matches' %}class="active"{% endif %}>Matches</a>
+
+    <span style="margin-left:auto;">
+      {% if is_admin %}
+        <span class="admin-badge">Admin</span>
+        <form method="post" action="{{ url_for('admin_lock') }}" style="display:inline">
+          <button type="submit" class="btn-ghost btn-sm">Lock</button>
+        </form>
+      {% else %}
+        <button type="button" class="btn-ghost btn-sm" onclick="openUnlockModal()">Unlock</button>
+      {% endif %}
+    </span>
   </nav>
+
   <main>
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -28,5 +41,40 @@
     {% endwith %}
     {% block content %}{% endblock %}
   </main>
+
+  <!-- Unlock modal -->
+  {% if not is_admin %}
+  <div id="unlock-modal" class="modal-backdrop" style="display:none">
+    <div class="modal">
+      <p class="modal-title">Admin unlock</p>
+      <p class="muted" style="margin-bottom:.8rem;font-size:.88rem;">Enter the admin key to enable write access.</p>
+      <form method="post" action="{{ url_for('admin_unlock') }}">
+        <input type="hidden" name="next" value="{{ request.url }}">
+        <div class="field" style="margin-bottom:.8rem;">
+          <label>Admin key</label>
+          <input type="password" name="admin_key" id="unlock-key-input"
+                 placeholder="Enter admin key" autocomplete="off" required>
+        </div>
+        <div style="display:flex;gap:.6rem;justify-content:flex-end;">
+          <button type="button" class="btn-ghost" onclick="closeUnlockModal()">Cancel</button>
+          <button type="submit">Unlock</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script>
+  function openUnlockModal() {
+    document.getElementById('unlock-key-input').value = '';
+    document.getElementById('unlock-modal').style.display = 'flex';
+    document.getElementById('unlock-key-input').focus();
+  }
+  function closeUnlockModal() {
+    document.getElementById('unlock-modal').style.display = 'none';
+  }
+  document.getElementById('unlock-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeUnlockModal();
+  });
+  </script>
+  {% endif %}
 </body>
 </html>

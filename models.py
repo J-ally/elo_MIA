@@ -1,7 +1,7 @@
+import os
 import sqlite3
-from datetime import datetime
 
-DB = "elo.db"
+DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "elo.db")
 K = 32
 
 
