@@ -17,7 +17,7 @@ uv run python main.py
 
 Open `http://localhost:5000`.
 
-The SQLite database (`elo.db`) is created automatically on first run.
+The SQLite database (`elo.db`) is created automatically on first run. **If U're the new host, the scores and matches are available in a compact sqlite DB that is straighforward to move between machines**
 
 ## create an .env
 
@@ -25,4 +25,4 @@ The SQLite database (`elo.db`) is created automatically on first run.
 ADMIN_KEY=change-me
 ```
 
-The admin key is required to delete or add players or matches.
+The admin key is required to delete or add players or matches. In this way we are publicly exposed to criticism, without compromising our database.
