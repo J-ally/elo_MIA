@@ -1,5 +1,6 @@
 import os
 import sqlite3
+from datetime import datetime
 
 DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "elo.db")
 K = 32
@@ -42,8 +43,12 @@ def _apply_elo(conn, a_id, b_id, draw=False):
     rb = conn.execute("SELECT elo FROM players WHERE id=?", (b_id,)).fetchone()["elo"]
     ea, eb = expected(ra, rb), expected(rb, ra)
     sa, sb = (0.5, 0.5) if draw else (1, 0)
-    conn.execute("UPDATE players SET elo=? WHERE id=?", (round(ra + K * (sa - ea)), a_id))
-    conn.execute("UPDATE players SET elo=? WHERE id=?", (round(rb + K * (sb - eb)), b_id))
+    conn.execute(
+        "UPDATE players SET elo=? WHERE id=?", (round(ra + K * (sa - ea)), a_id)
+    )
+    conn.execute(
+        "UPDATE players SET elo=? WHERE id=?", (round(rb + K * (sb - eb)), b_id)
+    )
 
 
 def register_match(white_id, black_id, played_at, winner):
@@ -105,7 +110,7 @@ def delete_player(player_id):
     with get_db() as conn:
         count = conn.execute(
             "SELECT COUNT(*) FROM matches WHERE white_id=? OR black_id=?",
-            (player_id, player_id)
+            (player_id, player_id),
         ).fetchone()[0]
         if count:
             raise ValueError(f"Cannot delete: player has {count} recorded match(es).")
@@ -132,21 +137,58 @@ def delete_match(match_id):
             conn.execute("UPDATE players SET draws=draws-1 WHERE id=?", (b_id,))
 
         # Revert ELO (apply the inverse result)
-        ra = conn.execute("SELECT elo FROM players WHERE id=?", (w_id,)).fetchone()["elo"]
-        rb = conn.execute("SELECT elo FROM players WHERE id=?", (b_id,)).fetchone()["elo"]
+        ra = conn.execute("SELECT elo FROM players WHERE id=?", (w_id,)).fetchone()[
+            "elo"
+        ]
+        rb = conn.execute("SELECT elo FROM players WHERE id=?", (b_id,)).fetchone()[
+            "elo"
+        ]
         ea, eb = expected(ra, rb), expected(rb, ra)
-        sa, sb = (0.5, 0.5) if winner == "draw" else ((1, 0) if winner == "white" else (0, 1))
+        sa, sb = (
+            (0.5, 0.5)
+            if winner == "draw"
+            else ((1, 0) if winner == "white" else (0, 1))
+        )
         # reverse: new = old + K*(s-e)  =>  old = new - K*(s-e)
-        conn.execute("UPDATE players SET elo=? WHERE id=?", (round(ra - K * (sa - ea)), w_id))
-        conn.execute("UPDATE players SET elo=? WHERE id=?", (round(rb - K * (sb - eb)), b_id))
+        conn.execute(
+            "UPDATE players SET elo=? WHERE id=?", (round(ra - K * (sa - ea)), w_id)
+        )
+        conn.execute(
+            "UPDATE players SET elo=? WHERE id=?", (round(rb - K * (sb - eb)), b_id)
+        )
 
         conn.execute("DELETE FROM matches WHERE id=?", (match_id,))
 
 
+def get_site_stats():
+    with get_db() as conn:
+        players = conn.execute("SELECT COUNT(*) FROM players").fetchone()[0]
+        matches = conn.execute("SELECT COUNT(*) FROM matches").fetchone()[0]
+    return {"players": players, "matches": matches}
+
+
+def get_last_match_date():
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT played_at FROM matches ORDER BY played_at DESC LIMIT 1"
+        ).fetchone()
+        if not row:
+            return "No matches yet"
+        raw = row["played_at"]  # format: 2026-03-26T14:30
+        try:
+            dt = datetime.strptime(raw, "%Y-%m-%dT%H:%M")
+            return dt.strftime("%b %d, %Y at %H:%M")
+        except ValueError:
+            return raw
+
+
 def get_player(player_id):
     with get_db() as conn:
-        player = conn.execute("SELECT *, wins+losses+draws AS games FROM players WHERE id=?", (player_id,)).fetchone()
-        history = conn.execute("""
+        player = conn.execute(
+            "SELECT *, wins+losses+draws AS games FROM players WHERE id=?", (player_id,)
+        ).fetchone()
+        history = conn.execute(
+            """
             SELECT m.played_at, m.winner,
                    w.name AS white, b.name AS black,
                    CASE WHEN m.white_id=? THEN 'white' ELSE 'black' END AS side
@@ -155,5 +197,7 @@ def get_player(player_id):
             JOIN players b ON m.black_id = b.id
             WHERE m.white_id=? OR m.black_id=?
             ORDER BY m.played_at DESC
-        """, (player_id, player_id, player_id)).fetchall()
+        """,
+            (player_id, player_id, player_id),
+        ).fetchall()
         return player, history

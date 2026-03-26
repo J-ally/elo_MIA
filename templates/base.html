@@ -42,6 +42,16 @@
     {% block content %}{% endblock %}
   </main>
 
+  <footer>
+    <div class="footer-stats">
+      <span class="footer-stat"><span class="footer-stat-value">{{ site_players }}</span><span class="footer-stat-label">player{{ 's' if site_players != 1 }}</span></span>
+      <span class="footer-divider"></span>
+      <span class="footer-stat"><span class="footer-stat-value">{{ site_matches }}</span><span class="footer-stat-label">match{{ 'es' if site_matches != 1 }}</span></span>
+      <span class="footer-divider"></span>
+      <span class="footer-last">Last match &mdash; {{ last_match_date }}</span>
+    </div>
+  </footer>
+
   <!-- Unlock modal -->
   {% if not is_admin %}
   <div id="unlock-modal" class="modal-backdrop" style="display:none">

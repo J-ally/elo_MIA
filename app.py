@@ -3,8 +3,18 @@ from datetime import datetime
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from models import (
-    init_db, create_player, delete_player, get_players, get_leaderboard,
-    get_matches, register_match, get_player, set_avatar, delete_match
+    init_db,
+    create_player,
+    delete_player,
+    get_players,
+    get_leaderboard,
+    get_matches,
+    register_match,
+    get_player,
+    set_avatar,
+    delete_match,
+    get_last_match_date,
+    get_site_stats,
 )
 
 load_dotenv()
@@ -22,7 +32,13 @@ def is_admin():
 
 @app.context_processor
 def inject_admin():
-    return {"is_admin": is_admin()}
+    stats = get_site_stats()
+    return {
+        "is_admin": is_admin(),
+        "last_match_date": get_last_match_date(),
+        "site_players": stats["players"],
+        "site_matches": stats["matches"],
+    }
 
 
 @app.before_request
@@ -31,6 +47,7 @@ def setup():
 
 
 # --- Auth ---
+
 
 @app.route("/admin/unlock", methods=["POST"])
 def admin_unlock():
@@ -52,6 +69,7 @@ def admin_lock():
 
 
 # --- Views ---
+
 
 @app.route("/")
 def leaderboard():
@@ -141,7 +159,9 @@ def matches():
             except Exception as e:
                 flash(f"Error: {e}", "error")
         return redirect(url_for("matches"))
-    return render_template("matches.html", players=players_list, matches=get_matches(), now=now)
+    return render_template(
+        "matches.html", players=players_list, matches=get_matches(), now=now
+    )
 
 
 @app.route("/matches/<int:match_id>/delete", methods=["POST"])

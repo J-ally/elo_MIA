@@ -1,7 +1,7 @@
 # Chess ELO System
 
 ELO tracker for IRL chess games. Built with Flask + SQLite.
-
+The tracker is accessible here : [MIA CHESS](https://miachess.allynd.re/). Served by [Joseph Allyndrée's server](https://github.com/J-ally).
 ## Dev setup
 
 ```bash
@@ -15,7 +15,7 @@ cp .env.example .env   # then edit ADMIN_KEY
 uv run python main.py
 ```
 
-Open `http://localhost:5000`.
+Open `http://localhost:8765`.
 
 The SQLite database (`elo.db`) is created automatically on first run. **If U're the new host, the scores and matches are available in a compact sqlite DB that is straighforward to move between machines**
 
